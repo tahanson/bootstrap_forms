@@ -1,8 +1,7 @@
 module BootstrapForms
   module Helpers
     module Wrappers
-      private
-      def control_group_div(&block)
+      def control_group_div(control_group_options = {}, &block)
         field_errors = error_string
         if @field_options[:error]
           (@field_options[:error] << ", " << field_errors) if field_errors
@@ -17,7 +16,6 @@ module BootstrapForms
         klasses << 'warning' if @field_options[:warning]
         klasses << 'required' if @field_options.merge(required_attribute)[:required]
 
-        control_group_options = {}
         control_group_options[:class] = klasses if !klasses.empty?
 
         if @field_options[:control_group] == false
@@ -27,7 +25,7 @@ module BootstrapForms
         end
       end
 
-      def error_string
+      def error_string(options = {})
         if respond_to?(:object) and object.respond_to?(:errors)
           errors = object.errors[@name]
           if errors.present?
@@ -42,8 +40,7 @@ module BootstrapForms
         object.class.human_attribute_name(@name) rescue @name.titleize
       end
 
-      def input_div(&block)
-        content_options = {}
+      def input_div(content_options = {}, &block)
         content_options[:class] = 'controls'
         if @field_options[:control_group] == false
           @field_options.delete :control_group
@@ -55,12 +52,12 @@ module BootstrapForms
         end
       end
 
-      def write_input_div(&block)
+      def write_input_div(options = {}, &block)
         if @field_options[:append] || @field_options[:prepend] || @field_options[:append_button]
-          klass = []
-          klass << 'input-prepend' if @field_options[:prepend]
-          klass << 'input-append' if @field_options[:append] || @field_options[:append_button]
-          html = content_tag(:div, :class => klass, &block)
+          options[:class] ||= [options[:class]].flatten.compact
+          options[:class] << 'input-prepend' if @field_options[:prepend]
+          options[:class] << 'input-append' if @field_options[:append] || @field_options[:append_button]
+          html = content_tag(:div, options, &block)
           html << extras(false, &block) if @field_options[:help_inline] || @field_options[:help_block] || @field_options[:error] || @field_options[:success] || @field_options[:warning]
           html
         else
@@ -68,11 +65,10 @@ module BootstrapForms
         end
       end
 
-      def label_field(&block)
+      def label_field(label_options = {}, &block)
         if @field_options[:label] == '' || @field_options[:label] == false
           return ''.html_safe
         else
-          label_options = {}
           label_options[:class] = 'control-label' unless @field_options[:control_group] == false
           if respond_to?(:object)
              label(@name, block_given? ? block : @field_options[:label], label_options)
@@ -117,7 +113,7 @@ module BootstrapForms
           return '' unless value = @field_options[method_name.to_sym]
 
           escape = true
-          tag_options = {}
+          tag_options = args.first || {}
           case method_name
           when 'help_block'
             element = :span
